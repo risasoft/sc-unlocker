@@ -4,7 +4,6 @@ elrond_wasm::imports!();
 const PERCENTAGE_TOTAL: u32 = 10_000; // 100%
 const MINIMUM_DEPOSIT: u64 = 1_000;
 
-
 #[elrond_wasm::contract]
 pub trait Unlocker {
     #[proxy]
@@ -51,7 +50,10 @@ pub trait Unlocker {
         let amount_after_fee = &amount - &fee;
 
         require!(&amount_after_fee < &amount, "incorrect fee");
-        require!(&amount_after_fee <= &self.get_liquidity_balance(), "no liquidity");
+        require!(
+            &amount_after_fee <= &self.get_liquidity_balance(),
+            "no liquidity"
+        );
         require!(&amount_after_fee > &0, "nothing to send");
         self.send().direct(
             &self.blockchain().get_caller(),
@@ -72,10 +74,7 @@ pub trait Unlocker {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller();
         require!(!caller.is_zero(), "invalid caller");
-        require!(
-            self.to_token().get() == token_id,
-            "token not supported"
-        );
+        require!(self.to_token().get() == token_id, "token not supported");
         require!(amount > 0, "incorrect amount");
         let minimum_deposit = self.types().big_uint_from(MINIMUM_DEPOSIT);
         require!(
@@ -85,7 +84,8 @@ pub trait Unlocker {
 
         let amount_with_fees = self.calculate_amount_with_fees(&amount);
 
-        self.depositor_balance(&caller).update(|balance| *balance += &amount_with_fees);
+        self.depositor_balance(&caller)
+            .update(|balance| *balance += &amount_with_fees);
         Ok(())
     }
 
@@ -102,22 +102,17 @@ pub trait Unlocker {
         let sc_balance = self.blockchain().get_sc_balance(&token, nonce);
         let dep_balance = self.depositor_balance(&caller).get();
 
-        require!(self.from_tokens().contains(&token),"token not supported");
-        require!(&amount > &0,"Invalid amount");
-        require!(&sc_balance > &0,"Insufficient contract funds (0)");
-        require!(&dep_balance > &0,"Insufficient depositor funds (0)");
-        require!(&sc_balance >= &amount,"Insufficient sc funds");
-        require!(&dep_balance >= &amount,"Insufficient depositor funds");
+        require!(self.from_tokens().contains(&token), "token not supported");
+        require!(&amount > &0, "Invalid amount");
+        require!(&sc_balance > &0, "Insufficient contract funds (0)");
+        require!(&dep_balance > &0, "Insufficient depositor funds (0)");
+        require!(&sc_balance >= &amount, "Insufficient sc funds");
+        require!(&dep_balance >= &amount, "Insufficient depositor funds");
 
-        self.send().direct(
-            &caller,
-            &token,
-            nonce,
-            &amount,
-            &[],
-        );
+        self.send().direct(&caller, &token, nonce, &amount, &[]);
 
-        self.depositor_balance(&caller).update(|balance| *balance -= &amount);
+        self.depositor_balance(&caller)
+            .update(|balance| *balance -= &amount);
         Ok(())
     }
 
