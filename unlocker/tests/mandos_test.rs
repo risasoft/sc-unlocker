@@ -3,12 +3,9 @@ use elrond_wasm_debug::*;
 
 fn contract_map() -> BlockchainMock {
     let mut blockchain = BlockchainMock::new();
-    blockchain.set_current_dir_from_workspace("unlocker");
+    //blockchain.set_current_dir_from_workspace("contracts/examples/adder");
 
-    blockchain.register_contract(
-        "file:output/unlocker.wasm",
-        Box::new(|context| Box::new(unlocker::contract_obj(context))),
-    );
+    blockchain.register_contract_builder("file:output/unlocker.wasm", unlocker::ContractBuilder);
     blockchain
 }
 

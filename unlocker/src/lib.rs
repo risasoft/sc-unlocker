@@ -1,30 +1,16 @@
 #![no_std]
 
-elrond_wasm::imports!();
 const PERCENTAGE_TOTAL: u32 = 10_000; // 100%
 const MINIMUM_DEPOSIT: u64 = 1_000;
 
-#[elrond_wasm::contract]
+elrond_wasm::imports!();
+#[elrond_wasm::derive::contract]
 pub trait Unlocker {
-    #[proxy]
-    fn self_proxy(&self) -> self::Proxy<Self::Api>;
-
     #[init]
-    fn init(
-        &self,
-        from_token: TokenIdentifier,
-        to_token: TokenIdentifier,
-        fee_percent: u32,
-    ) -> SCResult<()> {
-        let mut res = self.try_set_fee_percentage(fee_percent);
-        if (res.is_err()) {
-            return res;
-        }
+    fn init(&self, from_token: TokenIdentifier, to_token: TokenIdentifier, fee_percent: u32) {
+        self.try_set_fee_percentage(fee_percent);
 
-        res = self.add_from_token(from_token);
-        if (res.is_err()) {
-            return res;
-        }
+        self.add_from_token(from_token);
 
         self.add_to_token(to_token)
     }
@@ -35,7 +21,7 @@ pub trait Unlocker {
         &self,
         #[payment_token] token_id: TokenIdentifier,
         #[payment_amount] amount: BigUint,
-    ) -> SCResult<()> {
+    ) -> () {
         require!(amount >= PERCENTAGE_TOTAL, "amount too small");
         require!(!self.blockchain().get_caller().is_zero(), "invalid caller");
         require!(
@@ -62,7 +48,6 @@ pub trait Unlocker {
             &amount_after_fee,
             &[],
         );
-        Ok(())
     }
 
     #[payable("*")]
@@ -71,14 +56,13 @@ pub trait Unlocker {
         &self,
         #[payment_token] token_id: TokenIdentifier,
         #[payment_amount] amount: BigUint,
-    ) -> SCResult<()> {
+    ) -> () {
         let caller = self.blockchain().get_caller();
         require!(!caller.is_zero(), "invalid caller");
         require!(self.to_token().get() == token_id, "token not supported");
         require!(amount > 0, "incorrect amount");
-        let minimum_deposit = self.types().big_uint_from(MINIMUM_DEPOSIT);
         require!(
-            amount >= minimum_deposit,
+            amount >= MINIMUM_DEPOSIT,
             "Deposit amount must be greater than or equal to minimum deposit"
         );
 
@@ -86,7 +70,6 @@ pub trait Unlocker {
 
         self.depositor_balance(&caller)
             .update(|balance| *balance += &amount_with_fees);
-        Ok(())
     }
 
     #[view(getLiquidityBalance)]
@@ -95,7 +78,12 @@ pub trait Unlocker {
     }
 
     #[endpoint(harvest)]
-    fn harvest(&self, token: TokenIdentifier, nonce: u64, amount: BigUint) -> SCResult<()> {
+    fn harvest(
+        &self,
+        token: TokenIdentifier,
+        nonce: u64,
+        amount: BigUint,
+    ) -> () {
         let caller = self.blockchain().get_caller();
         require!(!caller.is_zero(), "invalid caller");
 
@@ -113,7 +101,6 @@ pub trait Unlocker {
 
         self.depositor_balance(&caller)
             .update(|balance| *balance -= &amount);
-        Ok(())
     }
 
     // PRIVATE METHODS
@@ -131,34 +118,31 @@ pub trait Unlocker {
 
     #[only_owner]
     #[endpoint(addFromToken)]
-    fn add_from_token(&self, asset: TokenIdentifier) -> SCResult<()> {
+    fn add_from_token(&self, asset: TokenIdentifier) -> () {
         require!(asset.is_valid_esdt_identifier(), "Invalid ESDT");
         self.from_tokens().insert(asset);
-        Ok(())
     }
 
     #[only_owner]
     #[endpoint(setToToken)]
-    fn add_to_token(&self, asset: TokenIdentifier) -> SCResult<()> {
+    fn add_to_token(&self, asset: TokenIdentifier) -> () {
         require!(asset.is_valid_esdt_identifier(), "Invalid ESDT");
         self.to_token().set(&asset);
-        Ok(())
     }
 
     #[only_owner]
     #[endpoint(setFee)]
-    fn try_set_fee_percentage(&self, new_fee_percentage: u32) -> SCResult<()> {
+    fn try_set_fee_percentage(&self, new_fee_percentage: u32) {
         require!(
             new_fee_percentage > 0 && new_fee_percentage < PERCENTAGE_TOTAL,
             "Invalid percentage value, should be between 0 and 10,000"
         );
         self.fee_percent().set(&BigUint::from(new_fee_percentage));
-        Ok(())
     }
 
     #[only_owner]
     #[endpoint(withdraw)]
-    fn withdraw(&self, token: TokenIdentifier, nonce: u64) -> SCResult<()> {
+    fn withdraw(&self, token: TokenIdentifier, nonce: u64) -> () {
         self.send().direct(
             &self.blockchain().get_owner_address(),
             &token,
@@ -166,7 +150,6 @@ pub trait Unlocker {
             &self.blockchain().get_sc_balance(&token, nonce),
             &[],
         );
-        Ok(())
     }
 
     // STORAGE

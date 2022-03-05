@@ -162,10 +162,8 @@
                     {
                         "address": "sc:unlocker",
                         "endpoint": "str:ESDTNFTTransfer",
-                        "topics": [
-                            "*"
-                        ],
-                        "data": ""
+                        "topics": "*",
+                        "data": "*"
                     }
                 ]
             }
@@ -227,10 +225,8 @@
                     {
                         "address": "sc:unlocker",
                         "endpoint": "str:ESDTTransfer",
-                        "topics": [
-                            "*"
-                        ],
-                        "data": ""
+                        "topics": "*",
+                        "data": "*"
                     }
                 ]
             }

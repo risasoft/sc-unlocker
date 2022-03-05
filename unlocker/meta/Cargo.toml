@@ -1,9 +1,9 @@
 [package]
-name = "unlocker-abi"
+name = "unlocker-meta"
 version = "0.0.0"
-authors = [ "you",]
 edition = "2018"
 publish = false
+authors = [ "you",]
 
 [dev-dependencies]
 
@@ -11,7 +11,7 @@ publish = false
 path = ".."
 
 [dependencies.elrond-wasm]
-version = "0.21.2"
+version = "0.29.3"
 
 [dependencies.elrond-wasm-debug]
-version = "0.21.2"
+version = "0.29.3"

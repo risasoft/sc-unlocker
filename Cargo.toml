@@ -1,5 +1,5 @@
 [workspace]
 members = [
     "unlocker",
-    "unlocker/abi"
+    "unlocker/meta"
 ]
